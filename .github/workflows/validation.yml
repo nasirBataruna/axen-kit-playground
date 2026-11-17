@@ -3,7 +3,7 @@ name: Public playground verification
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feat/g3k2-playground-a04-20261117]
 
 permissions:
   contents: read
