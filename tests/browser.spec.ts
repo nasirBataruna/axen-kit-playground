@@ -39,6 +39,7 @@ test('real public Axen Form F01 emits payload and reset clears state', async ({ 
   await expect(email).toBeVisible();
   const submit = page.getByRole('button', { name: /submit/i });
   await submit.click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toContainText('Please correct the highlighted fields');
   await expect(page.locator('.event-log')).toHaveCount(0);
   await name.fill('Example Tester');
   await email.fill('tester@example.invalid');
@@ -47,11 +48,13 @@ test('real public Axen Form F01 emits payload and reset clears state', async ({ 
   await expect(log).toContainText('form.submit');
   await expect(log).toContainText('Example Tester');
   await expect(log).toContainText('tester@example.invalid');
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
   await page.getByRole('button', { name: /reset/i }).click();
   await expect(name).toHaveValue('');
   await expect(email).toHaveValue('');
   await expect(log).not.toContainText('Example Tester');
   await expect(log).toContainText('Reset requested');
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
 });
 
 test('real Kit AppShell wraps real AxenForm and submits values', async ({ page }) => {
@@ -61,9 +64,11 @@ test('real Kit AppShell wraps real AxenForm and submits values', async ({ page }
   await page.locator('input[name="fullName"]').fill('Integrated Person');
   await page.locator('input[name="email"]').fill('integrated@example.invalid');
   await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
   await expect(page.locator('.event-log')).toContainText('Integrated Person');
   await page.getByRole('button', { name: /reset/i }).click();
   await expect(page.locator('input[name="fullName"]')).toHaveValue('');
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
 });
 test('Kit theme toggle preserves live Form values until reset', async ({ page }) => {
   await page.goto('/scenario/I02');
@@ -77,4 +82,32 @@ test('Kit theme toggle preserves live Form values until reset', async ({ page })
   expect(after).not.toBe(before);
   await page.getByRole('button', { name: /reset/i }).click();
   await expect(name).toHaveValue('');
+});
+
+test('I01 invalid submit gives immediate inline accessible feedback without an event', async ({ page }) => {
+  await page.goto('/scenario/I01');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.getByRole('alert')).toContainText('Please correct the highlighted fields');
+  await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
+  await expect(page.locator('.event-log')).toHaveCount(0);
+  await page.locator('input[name="fullName"]').fill('Nashir');
+  await page.locator('input[name="email"]').fill('not-an-email');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
+  await page.locator('input[name="email"]').fill('nashir@example.com');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Submission successful' })).toBeVisible();
+  await expect(page.locator('.event-log')).toContainText('nashir@example.com');
+});
+
+test('I02 inline success remains visible and theme switch preserves submitted values', async ({ page }) => {
+  await page.goto('/scenario/I02');
+  await page.locator('input[name="fullName"]').fill('Theme Tester');
+  await page.locator('input[name="email"]').fill('theme@example.invalid');
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await expect(page.locator('input[name="fullName"]')).toHaveValue('Theme Tester');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
 });

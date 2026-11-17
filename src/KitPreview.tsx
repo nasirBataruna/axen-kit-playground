@@ -1,16 +1,9 @@
-import { useRef, useState } from 'react';
-import { AxenForm, defaultComponentMap, type AxenFormRef, type FormConfig } from '@axenstudio/axen-form';
+import { useState } from 'react';
+import { FormWithFeedback } from './FormWithFeedback';
 import { DEFAULT_THEME, createKitTheme, defineKitLayout, resolveKitLayout } from '@axenstudio/axen-kit';
 import { KitAppShell, KitPanel, KitAction, KitStatus } from '@axenstudio/axen-kit/react';
 import '@axenstudio/axen-kit/react.css';
 
-const formConfig: FormConfig = {
-  initialValues: { fullName: '', email: '' },
-  fields: [
-    { name: 'fullName', type: 'text', label: 'Full name', required: true, colSpan: 6 },
-    { name: 'email', type: 'email', label: 'Email address', required: true, colSpan: 6 }
-  ]
-};
 const formLayout = defineKitLayout({ id: 'kit-form-playground', slots: [{ name: 'main', component: 'FormSlot' }] });
 const demoLayout = defineKitLayout({ id: 'kit-theme-playground', slots: [{ name: 'main', component: 'DemoSlot' }] });
 const slotLayout = defineKitLayout({ id: 'kit-slots-playground', slots: [
@@ -22,15 +15,10 @@ const registryLayout = defineKitLayout({ id: 'kit-registry-playground', slots: [
 const statusLayout = defineKitLayout({ id: 'kit-status-playground', slots: [{ name: 'main', component: 'StatusSlot' }] });
 
 function FormSlot({ onPayload }: { onPayload: (payload: unknown) => void }) {
-  const ref = useRef<AxenFormRef>(null);
   return (
     <KitPanel title="Real Kit + Axen Form">
       <p className="hint">Real KitAppShell slot · Form owns input state and validation</p>
-      <AxenForm ref={ref} config={formConfig} components={defaultComponentMap}
-        onSubmit={(values) => onPayload(values)} />
-      <div style={{ marginTop: 16 }}>
-        <KitAction onClick={() => { void ref.current?.submit(); }}>Submit Kit + Form</KitAction>
-      </div>
+      <FormWithFeedback kitButton onPayload={onPayload} />
     </KitPanel>
   );
 }

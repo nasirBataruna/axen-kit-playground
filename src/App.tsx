@@ -1,16 +1,8 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
-import { AxenForm, defaultComponentMap, type AxenFormRef, type FormConfig } from '@axenstudio/axen-form';
+import { FormWithFeedback, formConfig } from './FormWithFeedback';
 import { FORM_VERSION, groups, KIT_PROVIDER, getScenario, scenarios, type Scenario } from './scenarios';
 import { KitScenarioPreview } from './KitPreview';
-
-const formConfig: FormConfig = {
-  initialValues: { fullName: '', email: '' },
-  fields: [
-    { name: 'fullName', type: 'text', label: 'Full name', required: true, colSpan: 6 },
-    { name: 'email', type: 'email', label: 'Email address', required: true, colSpan: 6 }
-  ]
-};
 
 function statusLabel(state: Scenario['state']) {
   return state === 'live-form' ? 'Real Form demo' :
@@ -21,14 +13,9 @@ function statusLabel(state: Scenario['state']) {
 function sourceSample(scenario: Scenario) {
   if (scenario.id === 'F01') return `import { AxenForm, defaultComponentMap } from '@axenstudio/axen-form';
 
-// This is the actual live F01 example in the playground.
-const formRef = useRef<AxenFormRef>(null);
-<AxenForm ref={formRef} config={formConfig}
-  components={defaultComponentMap}
-  onSubmit={(values) => record(values)} />
-<button type="button" onClick={() => formRef.current?.submit()}>
-  Submit form
-</button>`;
+// F01 uses the same accessible feedback control as I01 and I02.
+<FormWithFeedback onPayload={(values) => record(values)} />
+// Success is announced inline only after AxenForm onSubmit runs.`;
   if (scenario.group === 'Form') return '// K3 behavior fixture not yet implemented.\n// Do not treat this sample as a passing Form test.';
   return `import { defineKitLayout, createKitTheme } from '@axenstudio/axen-kit';
 import { KitAppShell, KitPanel } from '@axenstudio/axen-kit/react';
@@ -48,25 +35,11 @@ function configSample(scenario: Scenario) {
 }
 
 function RealFormPreview({ onPayload }: { onPayload: (payload: unknown) => void }) {
-  const formRef = useRef<AxenFormRef>(null);
   return (
     <div className="form-wrap">
       <p className="mini-heading">Live · Axen Form v{FORM_VERSION}</p>
-      <AxenForm
-        ref={formRef}
-        config={formConfig}
-        components={defaultComponentMap}
-        onSubmit={(values) => onPayload(values)}
-      />
-      <button
-        type="button"
-        className="primary-link"
-        style={{ border: 0, marginTop: 18, fontWeight: 700 }}
-        onClick={() => formRef.current?.submit()}
-      >
-        Submit form
-      </button>
-      <p className="hint">Submit this form to append its real payload to the Events panel. No data leaves the browser.</p>
+      <FormWithFeedback onPayload={onPayload} />
+      <p className="hint">Success and validation are shown beside the form; Events / output retains the actual payload. No data leaves the browser.</p>
     </div>
   );
 }
