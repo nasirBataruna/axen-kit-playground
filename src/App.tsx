@@ -215,7 +215,7 @@ export default function App() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumbs"><strong>AXEN</strong><span>/</span><span>Developer playground</span></div>
-          <div className="topbar-right"><span className="version-chip">React 19 / Vite</span><a href="https://stackblitz.com/~/github.com/nasirBataruna/axen-kit-playground" target="_blank" rel="noreferrer">Open StackBlitz ↗</a></div>
+          <div className="topbar-right"><span className="version-chip">React 19 / Vite</span><a href="https://stackblitz.com/github/nasirBataruna/axen-kit-playground/tree/k2-a04-preview" target="_blank" rel="noreferrer">Open StackBlitz ↗</a></div>
         </header>
         <main id="content">
           <Routes>
