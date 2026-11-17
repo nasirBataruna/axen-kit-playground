@@ -2,7 +2,7 @@
 
 > Public scenario workspace for Axen Kit and **real Axen Form**. Work in progress: K2/A04 scenario shell, not yet a released Kit showcase.
 
-[Open in StackBlitz](https://stackblitz.com/~/github.com/nasirBataruna/axen-kit-playground) · [Axen Form reference](https://github.com/nasirBataruna/axen-form-playground) · [K2 readiness and provenance](https://drive.google.com/file/d/1GemkfIZlbg_laTE1UOZlDdHysAF2PK0p/view)
+[Open in StackBlitz](https://stackblitz.com/github/nasirBataruna/axen-kit-playground/tree/k2-a04-preview) · [Axen Form reference](https://github.com/nasirBataruna/axen-form-playground) · [K2 readiness and provenance](https://drive.google.com/file/d/1GemkfIZlbg_laTE1UOZlDdHysAF2PK0p/view)
 
 ## What this repo demonstrates
 
@@ -21,7 +21,7 @@ npm run check
 npm run build
 ```
 
-The StackBlitz link is a **target entrypoint**, not a certified K4 browser acceptance receipt. A04 navigation/build and A05–A09 interactions still require actual independent testing.
+The StackBlitz link targets the separate `k2-a04-preview` GitHub branch (not README-only `main`). It is **not** a certified K4 browser acceptance receipt. A04 navigation/build and A05–A09 interactions still require actual independent testing.
 
 ## Scenarios and gates
 
