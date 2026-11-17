@@ -1,0 +1,12 @@
+export type KitSlotName='header'|'nav'|'main'|'aside'|'footer';
+export type KitColors={background:string;surface:string;text:string;muted:string;primary:string;border:string};
+export type KitTheme={readonly colors:Readonly<KitColors>;readonly radius:number;readonly spacing:number};
+export type KitSlot={readonly name:KitSlotName;readonly component:string;readonly props:Readonly<Record<string,string|number|boolean|null>>};
+export type KitLayout={readonly id:string;readonly slots:ReadonlyArray<KitSlot>};
+export declare const KIT_VERSION:'0.1.0';
+export declare const DEFAULT_THEME:KitTheme;
+export declare function createKitTheme(overrides?:{colors?:Partial<KitColors>;radius?:number;spacing?:number}):KitTheme;
+export declare function kitCssVariables(theme?:KitTheme):Readonly<Record<string,string>>;
+export declare function defineKitLayout(input:{id:string;slots:ReadonlyArray<{name:KitSlotName;component:string;props?:Record<string,string|number|boolean|null>}>}):KitLayout;
+export type KitTrustedRenderer=((...args:any[])=>unknown)|{readonly "$$typeof":symbol;readonly render:(...args:any[])=>unknown}|{readonly "$$typeof":symbol;readonly type:KitTrustedRenderer};
+export declare function resolveKitLayout<T extends KitTrustedRenderer>(layout:KitLayout,registry:Record<string,T>,overrides?:Partial<Record<KitSlotName,string>>,runtimeProps?:Partial<Record<KitSlotName,Record<string,unknown>>>):ReadonlyArray<{name:KitSlotName;component:string;render:T;props:Readonly<Record<string,unknown>>}>;

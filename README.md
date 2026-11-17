@@ -1,63 +1,45 @@
-# Axen Kit Playground
+# Axen Kit + Form Playground — K2/K3 as-built
 
-> Public scenario workspace for Axen Kit and **real Axen Form**. Work in progress: K2/A04 scenario shell, not yet a released Kit showcase.
+Public, independent React 19 / Vite / TypeScript playground, with nine real source-backed scenarios. Development evidence is bound to the draft feature branch, **not** default `main`.
 
-[Open in StackBlitz](https://stackblitz.com/github/nasirBataruna/axen-kit-playground/tree/k2-a04-preview) · [Axen Form reference](https://github.com/nasirBataruna/axen-form-playground) · [K2 readiness and provenance](https://drive.google.com/file/d/1GemkfIZlbg_laTE1UOZlDdHysAF2PK0p/view)
+**Preview:** https://stackblitz.com/github/nasirBataruna/axen-kit-playground/tree/k2-a04-preview  
+**Draft PR:** https://github.com/nasirBataruna/axen-kit-playground/pull/1  
+**Continuous integration:** https://github.com/nasirBataruna/axen-kit-playground/actions
 
-## What this repo demonstrates
+## Clean reproducible install — K4 A08
 
-The K2 application is an independently hosted **React 19 + TypeScript + Vite** scenario shell. It is designed for nine named scenarios, grouped as Kit (K01–K03), Form (F01–F03), and Integrated (I01–I03). Each route includes a live/demo pane, a readable config/source pane, expected behavior, events/output, reset, and version provenance. The nine behavior tests belong to K3 and are **not claimed to pass at K2**.
-
-**Current delivery boundary:** `@axenstudio/axen-kit@0.1.0` is built in a private `axen-lib` feature branch, **not publicly distributed**. The public playground must not copy its source or upload its private package artifact without separate Owner authorization. Until an approved public-accessible Kit package channel exists, Kit and integrated routes honestly display an integration-pending notice rather than claiming to render Kit. The Form scenario uses the separately published `@axenstudio/axen-form@0.1.19`.
-
-## Getting started
-
-Requires Node.js 22+ for the standalone Vite playground (Kit consumer verification used Node 24).
+Requires Node.js **24.x** (matching Kit package engine). Use the tracked `package-lock.json` generated on a clean GitHub Actions runner, not `npm install`:
 
 ```sh
-npm install
-npm run dev
+npm ci --no-audit --no-fund
+sha256sum package-lock.json # 2681a73a6e0d13e1644a4847098eab14887aab3ce3e929049ec3b80400a2ddd7
 npm run check
 npm run build
+npm run test:browser  # after npx playwright install --with-deps chromium
+npm run dev
 ```
 
-The StackBlitz link targets the separate `k2-a04-preview` GitHub branch (not README-only `main`). It is **not** a certified K4 browser acceptance receipt. A04 navigation/build and A05–A09 interactions still require actual independent testing.
+The lock contains the exact installed dependency graph including the **local** `file:vendor/axen-kit` package. The six Kit-only files are sourced from private `nasirBataruna/axen-lib` draft PR #5 exact SHA `2d9af79bac53c7e6dbd6628d712199ea209add8d`; the upstream monorepo and Builder remain private. The consumed Form is public `@axenstudio/axen-form@0.1.19`. All external dependencies are pinned and frozen by lockfile. **This is a playground preview, not a published Kit package or a production deployment.**
 
-## Scenarios and gates
+## Actual implemented scenarios
 
-| Route | Scope | Current implementation |
-|---|---|---|
-| `/scenario/K01`, `K02`, `K03` | Theme, layout slots, trusted overrides | Scenario shell / Kit artifact pending |
-| `/scenario/F01`, `F02`, `F03` | Basic form, conditions, custom registration | F01 real Form; F02/F03 future behavior |
-| `/scenario/I01`, `I02`, `I03` | Kit+Form composition, theme preservation, accessibility | Kit artifact pending / future behavior |
+| Route | Browser-observable behavior |
+|---|---|
+| K01 | Default/override theme; immutable default token |
+| K02 | Semantic required/optional Kit slots at 375, 900 and 1200px without horizontal page overflow |
+| K03 | Trusted registry overrides and unknown-component rejection |
+| F01 | Real Form required/invalid/valid submit, visible inline feedback and reset |
+| F02 | Conditional delivery address, Form ref getValues/resetForm, required validation and inline submit feedback |
+| F03 | Custom registered field `registrationCode` with Zod validation, inline error/success, reset |
+| I01 | Real KitAppShell wraps real Form, submitted values appear inline and in Events |
+| I02 | Switching Kit theme preserves Form values, submit feedback and reset behavior |
+| I03 | Semantic Kit loading/empty/error states, focus and alert attributes |
 
-Routes support reload and direct navigation through React Router. Demo-only surfaces are labelled **DEMO**, not exported Axen Kit components. Never enter real customer data; all examples are static fixtures.
+Kit owns presentation/layout/theme; **Axen Form owns values, validation and submit**. Events/output panel is technical evidence only, never the sole user confirmation. The application is client-only with demo values, no backend or real Customer data.
 
-## Exact library provenance
+## Evidence, boundaries and limitations
 
-| Dependency | Revision | Status |
-|---|---|---|
-| Axen Kit 0.1.0 | `nasirBataruna/axen-lib` PR #5, commit `2d9af79bac53c7e6dbd6628d712199ea209add8d` | Private, unpublished; not bundled in this public repo |
-| Axen Form | `@axenstudio/axen-form@0.1.19` | Public dependency; owns validation, state and submit |
-| Kit A03 technical tests | Nalar `github-test-job:39884f3b536745a8a9b84de5eaa4a334` | 4/4 workflow checks PASS at pinned Kit SHA; not public consumer acceptance |
-
-Private Kit artifact transfer, public publishing and K4 StackBlitz release require explicit approval. No copy of the private `axen-lib` source, credentials, package tokens, or generated tarballs should be committed here. K0/K1 PRs are not merged into the library default branch.
-
-## Architecture
-
-```text
-src/scenarios.ts    Route metadata and provenance
-src/App.tsx         Public scenario shell, panels and Form demo
-src/App.css         Playground-only presentation (NOT Kit source)
-src/main.tsx        Browser entry
-```
-
-Axen's larger mission is a **domain-neutral application builder**. This playground validates UI-library consumption only; it is not an app generator, a production service or proof of the two non-POS generated apps required for G3.
-
-## Contribution policy
-
-Propose changes on feature branches and draft PRs. Keep the Kit, Form, Builder and Form reference repositories unchanged. Do not merge, publish private artifacts or claim PASS for unexecuted scenarios. Acceptance evidence and project decisions are tracked in the [Continuity Kit](https://drive.google.com/file/d/18LtSWuucr3gA7sl9UvWWV1KCmMlOn-ch/view).
-
-## GitHub About description (to set in repository Settings)
-
-**Axen Kit + Form interactive playground — React/Vite scenario shell, source/config inspector, and verifiable UI acceptance.**
+- **K3 existing receipt:** GitHub Actions `44104593290` at SHA `10704654387444b4ff291f8181ea6a2e231b4310`: TypeScript/build and **13/13 Chromium browser tests PASS**.
+- **K4 lock source:** clean GitHub runner `44106911129` on source SHA `6bebabf189a87a09a12aec917b61c68892bf78ee` created the lock and verified `npm ci`, typecheck and build; original candidate SHA-256: `2681a73a6e0d13e1644a4847098eab14887aab3ce3e929049ec3b80400a2ddd7`. K4 final acceptance requires CI on **resulting commit** with this lock tracked.
+- **StackBlitz A09:** separate external Chromium probe against the actual StackBlitz import is diagnostic only; **do not infer A09 PASS from local Vite Chromium**. The probe records PASS only if the StackBlitz live app iframe actually runs Kit+Form submission and F02. Evidence remains distinguishable if blocked by browser/network/StackBlitz.
+- Formal independent review, merge, production release, generated domain apps, and any full G3 exit are **not** claimed. Source remains draft PR #1. No automatic publishing, Builder edits, visibility changes or source-merging.
