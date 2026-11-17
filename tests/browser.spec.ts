@@ -159,3 +159,54 @@ test('F03 registered custom field validates via Zod with accessible feedback', a
   await page.getByRole('button', { name: 'Source' }).click();
   await expect(page.locator('.code-panel pre')).toContainText('zodAdapter');
 });
+
+test('K01 theme override is visible and default theme remains immutable', async ({ page }) => {
+  await page.goto('/scenario/K01');
+  const shell = page.locator('[data-axen-kit-shell="kit-theme-playground"]');
+  await expect(shell).toBeVisible();
+  const primary = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  await expect(page.getByText('Default token remains: #2563eb')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  const override = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  expect(override).not.toBe(primary);
+  await expect(page.getByText('Default token remains: #2563eb')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await expect.poll(() => shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim())).toBe(primary);
+});
+
+test('K02 required main and optional aside slots render without page overflow', async ({ page }) => {
+  for (const width of [375, 900, 1200]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/scenario/K02');
+    await expect(page.locator('[data-axen-kit-shell="kit-slots-playground"]')).toBeVisible();
+    for (const name of ['header', 'main', 'aside']) {
+      await expect(page.locator(`[data-axen-kit-slot="${name}"]`)).toBeVisible();
+    }
+    const dimensions = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth
+    }));
+    expect(dimensions.scroll, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(dimensions.client + 1);
+  }
+});
+
+test('K03 allows registered overrides and rejects unknown component keys', async ({ page }) => {
+  await page.goto('/scenario/K03');
+  await expect(page.locator('[data-axen-kit-shell="kit-registry-playground"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Real Axen Kit Panel' })).toBeVisible();
+  await expect(page.getByText('Unknown component rejected: UNKNOWN_COMPONENT UnregisteredSlot')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch registry override' }).click();
+  await expect(page.getByRole('heading', { name: 'Trusted override' })).toBeVisible();
+});
+
+test('I03 announces loading empty and error states with keyboard focus', async ({ page }) => {
+  await page.goto('/scenario/I03');
+  await expect(page.locator('[data-axen-kit-status="loading"][role="status"]')).toContainText('Loading fixture');
+  await expect(page.locator('[data-axen-kit-status="empty"][role="status"]')).toContainText('No records fixture');
+  await expect(page.locator('[data-axen-kit-status="error"][role="alert"][aria-live="assertive"]')).toContainText('Error fixture');
+  await page.keyboard.press('Tab');
+  const focused = page.locator(':focus');
+  await expect(focused).toBeVisible();
+  const outline = await focused.evaluate(el => getComputedStyle(el).outlineStyle);
+  expect(outline).not.toBe('none');
+});
