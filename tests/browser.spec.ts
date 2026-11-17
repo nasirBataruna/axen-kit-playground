@@ -87,7 +87,7 @@ test('Kit theme toggle preserves live Form values until reset', async ({ page })
 test('I01 invalid submit gives immediate inline accessible feedback without an event', async ({ page }) => {
   await page.goto('/scenario/I01');
   await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
-  await expect(page.getByRole('alert')).toContainText('Please correct the highlighted fields');
+  await expect(page.locator('[data-submit-state="invalid"][role="alert"]')).toContainText('Please correct the highlighted fields');
   await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
   await expect(page.locator('.event-log')).toHaveCount(0);
   await page.locator('input[name="fullName"]').fill('Nashir');
