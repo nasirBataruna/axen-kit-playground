@@ -1,0 +1,38 @@
+name: K4 lockfile generation proof
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compute pinned lock candidate
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Clean install using generated lock
+        run: npm ci --no-audit --no-fund
+      - name: Check and build
+        run: |
+          npm run check
+          npm run build
+      - name: Emit lockfile for exact SHA import
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const b = fs.readFileSync('package-lock.json');
+          const data = b.toString('base64');
+          console.log('AXEN_K4_LOCK_BEGIN sha256=' + crypto.createHash('sha256').update(b).digest('hex'));
+          for(let i=0; i<data.length; i+=1500) console.log('AXEN_K4_LOCK_CHUNK=' + data.slice(i,i+1500));
+          console.log('AXEN_K4_LOCK_END bytes=' + b.length);
+          NODE
