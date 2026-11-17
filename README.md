@@ -12,6 +12,7 @@ Requires Node.js **24.x** (matching Kit package engine). Use the tracked `packag
 
 ```sh
 npm ci --no-audit --no-fund
+sha256sum package-lock.json # 2681a73a6e0d13e1644a4847098eab14887aab3ce3e929049ec3b80400a2ddd7
 npm run check
 npm run build
 npm run test:browser  # after npx playwright install --with-deps chromium
