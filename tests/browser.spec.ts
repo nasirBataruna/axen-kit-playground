@@ -1,0 +1,212 @@
+import { test, expect } from '@playwright/test';
+
+const scenarioIds = ['K01', 'K02', 'K03', 'F01', 'F02', 'F03', 'I01', 'I02', 'I03'] as const;
+
+test('nine deep links render and survive direct browser reload', async ({ page }) => {
+  for (const id of scenarioIds) {
+    await page.goto(`/scenario/${id}`);
+    await expect(page.locator('.eyebrow')).toContainText(id);
+    await expect(page.getByRole('region', { name: 'Live scenario' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Config' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
+    await page.reload();
+    await expect(page.locator('.eyebrow')).toContainText(id);
+  }
+});
+
+test('landing, navigation, source/config and pending provenance are honest', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Explore the boundaries');
+  await page.getByRole('navigation', { name: 'Scenarios' }).getByRole('link', { name: /K01.*Theme/i }).click();
+  await expect(page).toHaveURL(/\/scenario\/K01$/);
+  await expect(page.getByText('Real Kit demo', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-axen-kit-shell]')).toBeVisible();
+  await page.getByRole('button', { name: 'Source' }).click();
+  await expect(page.locator('.code-panel pre')).toContainText('Real Kit-only package');
+  await page.getByRole('button', { name: 'Config' }).click();
+  await expect(page.locator('.code-panel pre')).toContainText('"status": "live-kit"');
+  await page.getByRole('link', { name: /F01.*Basic submission/i }).click();
+  await expect(page).toHaveURL(/\/scenario\/F01$/);
+  await expect(page.getByText('Real Form demo', { exact: true })).toBeVisible();
+});
+
+test('real public Axen Form F01 emits payload and reset clears state', async ({ page }) => {
+  await page.goto('/scenario/F01');
+  await expect(page.getByText('Live · Axen Form v0.1.19')).toBeVisible();
+  const name = page.locator('input[name="fullName"]');
+  const email = page.locator('input[name="email"]');
+  await expect(name).toBeVisible();
+  await expect(email).toBeVisible();
+  const submit = page.getByRole('button', { name: /submit/i });
+  await submit.click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toContainText('Please correct the highlighted fields');
+  await expect(page.locator('.event-log')).toHaveCount(0);
+  await name.fill('Example Tester');
+  await email.fill('tester@example.invalid');
+  await submit.click();
+  const log = page.locator('.event-log');
+  await expect(log).toContainText('form.submit');
+  await expect(log).toContainText('Example Tester');
+  await expect(log).toContainText('tester@example.invalid');
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(name).toHaveValue('');
+  await expect(email).toHaveValue('');
+  await expect(log).not.toContainText('Example Tester');
+  await expect(log).toContainText('Reset requested');
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
+});
+
+test('real Kit AppShell wraps real AxenForm and submits values', async ({ page }) => {
+  await page.goto('/scenario/I01');
+  await expect(page.locator('[data-axen-kit-shell="kit-form-playground"]')).toBeVisible();
+  await expect(page.locator('[data-axen-kit-slot="main"]')).toBeVisible();
+  await page.locator('input[name="fullName"]').fill('Integrated Person');
+  await page.locator('input[name="email"]').fill('integrated@example.invalid');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await expect(page.locator('.event-log')).toContainText('Integrated Person');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(page.locator('input[name="fullName"]')).toHaveValue('');
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
+});
+test('Kit theme toggle preserves live Form values until reset', async ({ page }) => {
+  await page.goto('/scenario/I02');
+  const shell = page.locator('[data-axen-kit-shell="kit-form-playground"]');
+  const name = page.locator('input[name="fullName"]');
+  await name.fill('Persistent Draft');
+  const before = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await expect(name).toHaveValue('Persistent Draft');
+  const after = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  expect(after).not.toBe(before);
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(name).toHaveValue('');
+});
+
+test('I01 invalid submit gives immediate inline accessible feedback without an event', async ({ page }) => {
+  await page.goto('/scenario/I01');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="invalid"][role="alert"]')).toContainText('Please correct the highlighted fields');
+  await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
+  await expect(page.locator('.event-log')).toHaveCount(0);
+  await page.locator('input[name="fullName"]').fill('Nashir');
+  await page.locator('input[name="email"]').fill('not-an-email');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
+  await page.locator('input[name="email"]').fill('nashir@example.com');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Submission successful' })).toBeVisible();
+  await expect(page.locator('.event-log')).toContainText('nashir@example.com');
+});
+
+test('I02 inline success remains visible and theme switch preserves submitted values', async ({ page }) => {
+  await page.goto('/scenario/I02');
+  await page.locator('input[name="fullName"]').fill('Theme Tester');
+  await page.locator('input[name="email"]').fill('theme@example.invalid');
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await expect(page.locator('input[name="fullName"]')).toHaveValue('Theme Tester');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
+});
+
+test('F02 real conditional delivery field, inline validation, ref actions and reset', async ({ page }) => {
+  await page.goto('/scenario/F02');
+  await expect(page.getByText('Real Form demo', { exact: true })).toBeVisible();
+  const type = page.locator('select[name="orderType"]');
+  const address = page.locator('input[name="address"]');
+  const item = page.locator('input[name="itemName"]');
+  await expect(type).toBeVisible();
+  await expect(address).toHaveCount(0);
+  await type.selectOption('delivery');
+  await expect(address).toBeVisible();
+  await item.fill('Demo parcel');
+  await page.getByRole('button', { name: 'Submit form' }).click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toBeVisible();
+  await expect(page.locator('.event-log')).toHaveCount(0);
+  await address.fill('Example delivery address');
+  await page.getByRole('button', { name: 'Submit form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await expect(page.locator('.event-log')).toContainText('Example delivery address');
+  await page.getByRole('button', { name: 'getValues()' }).click();
+  await expect(page.locator('.event-log')).toContainText('form.ref');
+  await page.getByRole('button', { name: 'resetForm()' }).click();
+  await expect(type).toHaveValue('');
+  await expect(address).toHaveCount(0);
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Config' }).click();
+  await expect(page.locator('.code-panel pre')).toContainText('orderType=delivery');
+});
+test('F03 registered custom field validates via Zod with accessible feedback', async ({ page }) => {
+  await page.goto('/scenario/F03');
+  const code = page.locator('input[name="registrationCode"]');
+  const display = page.locator('input[name="displayName"]');
+  await expect(page.locator('[data-custom-registration="registrationCode"]')).toBeVisible();
+  await display.fill('Tester');
+  await code.fill('ab');
+  await page.getByRole('button', { name: 'Submit form' }).click();
+  await expect(page.locator('[data-submit-state="invalid"]')).toContainText('Please correct');
+  await expect(page.locator('.event-log')).toHaveCount(0);
+  await code.fill('demo1234');
+  await page.getByRole('button', { name: 'Submit form' }).click();
+  await expect(page.locator('[data-submit-state="success"]')).toContainText('Submission successful');
+  await expect(page.locator('.event-log')).toContainText('demo1234');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(code).toHaveValue('');
+  await expect(page.locator('[data-submit-state="idle"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Source' }).click();
+  await expect(page.locator('.code-panel pre')).toContainText('zodAdapter');
+});
+
+test('K01 theme override is visible and default theme remains immutable', async ({ page }) => {
+  await page.goto('/scenario/K01');
+  const shell = page.locator('[data-axen-kit-shell="kit-theme-playground"]');
+  await expect(shell).toBeVisible();
+  const primary = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  await expect(page.getByText('Default token remains: #2563eb')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  const override = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  expect(override).not.toBe(primary);
+  await expect(page.getByText('Default token remains: #2563eb')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await expect.poll(() => shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim())).toBe(primary);
+});
+
+test('K02 required main and optional aside slots render without page overflow', async ({ page }) => {
+  for (const width of [375, 900, 1200]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/scenario/K02');
+    await expect(page.locator('[data-axen-kit-shell="kit-slots-playground"]')).toBeVisible();
+    for (const name of ['header', 'main', 'aside']) {
+      await expect(page.locator(`[data-axen-kit-slot="${name}"]`)).toBeVisible();
+    }
+    const dimensions = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth
+    }));
+    expect(dimensions.scroll, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(dimensions.client + 1);
+  }
+});
+
+test('K03 allows registered overrides and rejects unknown component keys', async ({ page }) => {
+  await page.goto('/scenario/K03');
+  await expect(page.locator('[data-axen-kit-shell="kit-registry-playground"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Real Axen Kit Panel' })).toBeVisible();
+  await expect(page.getByText('Unknown component rejected: UNKNOWN_COMPONENT UnregisteredSlot')).toBeVisible();
+  await page.getByRole('button', { name: 'Switch registry override' }).click();
+  await expect(page.getByRole('heading', { name: 'Trusted override' })).toBeVisible();
+});
+
+test('I03 announces loading empty and error states with keyboard focus', async ({ page }) => {
+  await page.goto('/scenario/I03');
+  await expect(page.locator('[data-axen-kit-status="loading"][role="status"]')).toContainText('Loading fixture');
+  await expect(page.locator('[data-axen-kit-status="empty"][role="status"]')).toContainText('No records fixture');
+  await expect(page.locator('[data-axen-kit-status="error"][role="alert"][aria-live="assertive"]')).toContainText('Error fixture');
+  await page.keyboard.press('Tab');
+  const focused = page.locator(':focus');
+  await expect(focused).toBeVisible();
+  const outline = await focused.evaluate(el => getComputedStyle(el).outlineStyle);
+  expect(outline).not.toBe('none');
+});

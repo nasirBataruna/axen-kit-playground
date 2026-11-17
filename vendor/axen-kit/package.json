@@ -1,0 +1,43 @@
+{
+  "name": "@axenstudio/axen-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./react": {
+      "types": "./src/react.d.ts",
+      "default": "./src/react.js"
+    },
+    "./react.css": {
+      "default": "./src/react.css"
+    }
+  },
+  "scripts": {
+    "build": "node --check src/index.js",
+    "test": "node --test test/*.test.mjs",
+    "typecheck": "tsc --project test/tsconfig.types.json --noEmit",
+    "test:consumer": "node test/consumer/verify.mjs"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "5.9.3"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "react": ">=19.0.0"
+  },
+  "sideEffects": [
+    "./src/react.css"
+  ]
+}
