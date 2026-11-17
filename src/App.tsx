@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { FormWithFeedback, formConfig } from './FormWithFeedback';
+import { ExtendedFormPreview } from './ExtendedFormPreview';
 import { FORM_VERSION, groups, KIT_PROVIDER, getScenario, scenarios, type Scenario } from './scenarios';
 import { KitScenarioPreview } from './KitPreview';
 
@@ -16,7 +17,13 @@ function sourceSample(scenario: Scenario) {
 // F01 uses the same accessible feedback control as I01 and I02.
 <FormWithFeedback onPayload={(values) => record(values)} />
 // Success is announced inline only after AxenForm onSubmit runs.`;
-  if (scenario.group === 'Form') return '// K3 behavior fixture not yet implemented.\n// Do not treat this sample as a passing Form test.';
+  if (scenario.id === 'F02') return `// Real conditional AxenForm hidden: (values) => values.orderType !== 'delivery'
+// Real Form ref: getValues() and resetForm() + inline submission state.
+import { conditionalConfig } from './ExtendedFormPreview';`;
+  if (scenario.id === 'F03') return `// Registered via components={{ registrationCode: RegistrationCodeField }}
+// Real validationAdapter={zodAdapter(z)}, with a minimum 4-character schema.
+import { customConfig, customFieldComponents } from './ExtendedFormPreview';`;
+  if (scenario.group === 'Form') return '// Not implemented.';
   return `import { defineKitLayout, createKitTheme } from '@axenstudio/axen-kit';
 import { KitAppShell, KitPanel } from '@axenstudio/axen-kit/react';
 // Real Kit-only package pinned from axen-lib @ ${KIT_PROVIDER}
@@ -25,6 +32,18 @@ import { KitAppShell, KitPanel } from '@axenstudio/axen-kit/react';
 }
 function configSample(scenario: Scenario) {
   if (scenario.id === 'F01') return JSON.stringify(formConfig, null, 2);
+  if (scenario.id === 'F02') return JSON.stringify({
+    scenario: 'F02', engine: '@axenstudio/axen-form@0.1.19',
+    orderType: ['pickup', 'delivery'],
+    address: 'hidden unless orderType=delivery; required for delivery',
+    refActions: ['getValues()', 'resetForm()'], state: 'live-form'
+  }, null, 2);
+  if (scenario.id === 'F03') return JSON.stringify({
+    scenario: 'F03', engine: '@axenstudio/axen-form@0.1.19',
+    customFieldType: 'registrationCode',
+    registeredVia: 'AxenForm.components', validation: 'Zod min(4)',
+    state: 'live-form'
+  }, null, 2);
   return JSON.stringify({
     scenario: scenario.id,
     provider: scenario.group === 'Form' ? '@axenstudio/axen-form@0.1.19' : '@axenstudio/axen-kit@0.1.0',
@@ -83,6 +102,12 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
       ...history
     ]);
   }
+  function recordRef(action: string, value: unknown) {
+    setEvents(history => [
+      JSON.stringify({ event: 'form.ref', action, value }, null, 2),
+      ...history
+    ]);
+  }
   return (
     <div className="scenario-page">
       <div className="page-head">
@@ -98,6 +123,8 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
           <div className="panel-bar"><span><span className="dot live-dot" /> Live preview</span><button type="button" onClick={reset}>↺ Reset</button></div>
           {scenario.id === 'F01'
             ? <RealFormPreview key={resetKey} onPayload={record} />
+            : scenario.id === 'F02' || scenario.id === 'F03'
+              ? <ExtendedFormPreview key={resetKey} scenarioId={scenario.id} onPayload={record} onRefAction={recordRef} />
             : scenario.state === 'live-kit' || scenario.state === 'live-integrated'
               ? <KitScenarioPreview key={resetKey} scenarioId={scenario.id} onPayload={record} />
               : <WaitingPreview scenario={scenario} />}
@@ -122,7 +149,7 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
         </section>
         <section className="lab-panel lower">
           <div className="section-title"><h3>Events / output</h3><span>{events.length} events</span></div>
-          {events.length ? <pre className="event-log">{events.join('\n\n')}</pre> : <p className="muted">No events. Submit F01 or press Reset to record an observed action.</p>}
+          {events.length ? <pre className="event-log">{events.join('\n\n')}</pre> : <p className="muted">No events. Submit a live form or press Reset to observe an action.</p>}
         </section>
       </div>
       <div className="provenance">

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AxenForm, defaultComponentMap, type AxenFormRef, type FormConfig } from '@axenstudio/axen-form';
+import { AxenForm, defaultComponentMap, type AxenFormRef, type FormConfig, type FieldTypeComponentMap, type ValidationAdapter } from '@axenstudio/axen-form';
 import { KitAction } from '@axenstudio/axen-kit/react';
 
 export const formConfig: FormConfig = {
@@ -23,10 +23,20 @@ const messages: Record<Phase, string> = {
 /** The callback, not the button click, is the source of truth for success. */
 export function FormWithFeedback({
   onPayload,
-  kitButton = false
+  kitButton = false,
+  config = formConfig,
+  components = defaultComponentMap,
+  validationAdapter,
+  showRefActions = false,
+  onRefAction
 }: {
   onPayload: (payload: unknown) => void | Promise<void>;
   kitButton?: boolean;
+  config?: FormConfig;
+  components?: Partial<FieldTypeComponentMap>;
+  validationAdapter?: ValidationAdapter;
+  showRefActions?: boolean;
+  onRefAction?: (action: string, value: unknown) => void;
 }) {
   const formRef = useRef<AxenFormRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,7 +100,8 @@ export function FormWithFeedback({
         void submit();
       }}
     >
-      <AxenForm ref={formRef} config={formConfig} components={defaultComponentMap}
+      <AxenForm ref={formRef} config={config} components={components}
+        validationAdapter={validationAdapter}
         validationPolicy={{ mode: 'standard' }}
         onSubmit={(values) => handleSubmit(values)} />
       <div className="submit-actions">
@@ -105,6 +116,20 @@ export function FormWithFeedback({
           </button>
         )}
       </div>
+      {showRefActions && <div className="form-ref-actions" aria-label="Imperative AxenFormRef actions">
+        <button type="button" disabled={busy} onClick={() => {
+          const api = formRef.current;
+          if (api) onRefAction?.('getValues()', api.getValues());
+        }}>getValues()</button>
+        <button type="button" disabled={busy} onClick={() => {
+          const api = formRef.current;
+          if (!api) return;
+          api.resetForm();
+          setPhase('idle');
+          inFlight.current = false;
+          onRefAction?.('resetForm()', api.getValues());
+        }}>resetForm()</button>
+      </div>}
       <div data-submit-state={phase} className={`submit-feedback submit-feedback--${phase}`}
         role={phase === 'invalid' || phase === 'error' ? 'alert' : 'status'}
         aria-live={phase === 'invalid' || phase === 'error' ? 'assertive' : 'polite'}
