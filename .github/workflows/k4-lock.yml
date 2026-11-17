@@ -1,0 +1,41 @@
+name: K4 frozen consumer acceptance
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Clean frozen npm install
+        run: npm ci --no-audit --no-fund
+      - name: Verify exact lock digest
+        run: echo '2681a73a6e0d13e1644a4847098eab14887aab3ce3e929049ec3b80400a2ddd7  package-lock.json' | sha256sum --check
+      - name: Typecheck and build
+        run: |
+          npm run check
+          npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: K3 nine-scenario regression tests
+        run: npm run test:browser
+      - name: External StackBlitz browser (A09 diagnostic)
+        continue-on-error: true
+        run: node tests/stackblitz-probe.mjs
+      - name: Keep external browser observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k4-a09-probe-frozen
+          path: test-results/stackblitz-probe.json
+          if-no-files-found: ignore
