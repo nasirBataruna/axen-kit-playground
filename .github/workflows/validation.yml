@@ -24,3 +24,27 @@ jobs:
         run: npm run check
       - name: Build
         run: npm run build
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install public dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser probe (nine route reloads, actual F01)
+        run: npm run test:browser
+      - name: Preserve failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k2-a04-playwright-failures
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
