@@ -18,10 +18,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      # K2 temporary install. A08 frozen lock/clean consumer gate is still PENDING.
-      - name: Install public dependencies
-        run: npm install --no-audit --no-fund
+          node-version: '24'
+      - name: Frozen clean consumer install
+        run: npm ci --no-audit --no-fund
       - name: Typecheck
         run: npm run check
       - name: Build
@@ -36,13 +35,23 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Install public dependencies
-        run: npm install --no-audit --no-fund
+          node-version: '24'
+      - name: Frozen clean consumer install
+        run: npm ci --no-audit --no-fund
       - name: Install test browser
         run: npx playwright install --with-deps chromium
-      - name: Browser probe (nine route reloads, actual F01)
+      - name: Browser probe (K01-I03 real behaviors)
         run: npm run test:browser
+      - name: StackBlitz external Chromium probe (A09 - diagnostic, separately accepted)
+        continue-on-error: true
+        run: node tests/stackblitz-probe.mjs
+      - name: Preserve original StackBlitz probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k4-a09-stackblitz-observation
+          path: test-results/stackblitz-probe.json
+          if-no-files-found: error
       - name: Preserve failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
