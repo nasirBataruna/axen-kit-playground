@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AxenForm, defaultComponentMap, type AxenFormRef, type FormConfig } from '@axenstudio/axen-form';
 import { FORM_VERSION, groups, KIT_PROVIDER, getScenario, scenarios, type Scenario } from './scenarios';
+import { KitScenarioPreview } from './KitPreview';
 
 const formConfig: FormConfig = {
   initialValues: { fullName: '', email: '' },
@@ -13,6 +14,8 @@ const formConfig: FormConfig = {
 
 function statusLabel(state: Scenario['state']) {
   return state === 'live-form' ? 'Real Form demo' :
+    state === 'live-kit' ? 'Real Kit demo' :
+    state === 'live-integrated' ? 'Kit + Form live' :
     state === 'kit-pending' ? 'Kit artifact pending' : 'Behavior planned';
 }
 function sourceSample(scenario: Scenario) {
@@ -27,12 +30,11 @@ const formRef = useRef<AxenFormRef>(null);
   Submit form
 </button>`;
   if (scenario.group === 'Form') return '// K3 behavior fixture not yet implemented.\n// Do not treat this sample as a passing Form test.';
-  return `// ILLUSTRATIVE ONLY — Kit is not in this public build.
-// Private provider: nasirBataruna/axen-lib @ ${KIT_PROVIDER}
-import { KitAppShell } from '@axenstudio/axen-kit/react';
-
-// Actual Kit package consumption awaits an approved
-// publicly accessible, pinned artifact delivery channel.`;
+  return `import { defineKitLayout, createKitTheme } from '@axenstudio/axen-kit';
+import { KitAppShell, KitPanel } from '@axenstudio/axen-kit/react';
+// Real Kit-only package pinned from axen-lib @ ${KIT_PROVIDER}
+// Live implementation: src/KitPreview.tsx
+// Scenario ${scenario.id} uses real Kit registry, slots and presentation.`;
 }
 function configSample(scenario: Scenario) {
   if (scenario.id === 'F01') return JSON.stringify(formConfig, null, 2);
@@ -40,7 +42,7 @@ function configSample(scenario: Scenario) {
     scenario: scenario.id,
     provider: scenario.group === 'Form' ? '@axenstudio/axen-form@0.1.19' : '@axenstudio/axen-kit@0.1.0',
     status: scenario.state,
-    fixture: 'pending K3 implementation',
+    fixture: scenario.state === 'future' ? 'pending K3 implementation' : 'real Kit runtime; full K3 acceptance pending',
     expected: scenario.expected
   }, null, 2);
 }
@@ -116,14 +118,16 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
           <h2>{scenario.name}</h2>
           <p>{scenario.purpose}</p>
         </div>
-        <span className={`state-pill ${scenario.state === 'live-form' ? 'live' : ''}`}>{statusLabel(scenario.state)}</span>
+        <span className={`state-pill ${scenario.state.startsWith('live-') ? 'live' : ''}`}>{statusLabel(scenario.state)}</span>
       </div>
       <div className="workbench">
         <section className="lab-panel live-panel" aria-label="Live scenario">
           <div className="panel-bar"><span><span className="dot live-dot" /> Live preview</span><button type="button" onClick={reset}>↺ Reset</button></div>
           {scenario.id === 'F01'
             ? <RealFormPreview key={resetKey} onPayload={record} />
-            : <WaitingPreview scenario={scenario} />}
+            : scenario.state === 'live-kit' || scenario.state === 'live-integrated'
+              ? <KitScenarioPreview key={resetKey} scenarioId={scenario.id} onPayload={record} />
+              : <WaitingPreview scenario={scenario} />}
         </section>
         <section className="lab-panel code-panel" aria-label="Config and source">
           <div className="panel-bar">
@@ -141,7 +145,7 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
         <section className="lab-panel lower">
           <h3>Expected behavior</h3>
           <p>{scenario.expected}</p>
-          <span className="evidence-label">{scenario.state === 'live-form' ? 'Interactive example · no browser acceptance receipt' : 'Not yet verified · K3'}</span>
+          <span className="evidence-label">{scenario.state === 'future' ? 'Planned · K3' : 'Real runtime · full K3 acceptance pending'}</span>
         </section>
         <section className="lab-panel lower">
           <div className="section-title"><h3>Events / output</h3><span>{events.length} events</span></div>
@@ -150,7 +154,7 @@ function ScenarioPanel({ scenario }: { scenario: Scenario }) {
       </div>
       <div className="provenance">
         <strong>Provenance</strong>
-        <span>Axen Kit 0.1.0 · private SHA <code>{KIT_PROVIDER.slice(0,12)}</code> · not installed</span>
+        <span>Axen Kit 0.1.0 · Kit-only local package · SHA <code>{KIT_PROVIDER.slice(0,12)}</code></span>
         <span>Axen Form {FORM_VERSION} · public dependency</span>
         <span>K2 A04 shell · not K3/K4 accepted</span>
       </div>
@@ -192,7 +196,7 @@ function Landing() {
           </div>
         ))}
       </div>
-      <p className="landing-note">Currently only F01 uses the published Form implementation. Kit/integrated scenarios are blocked on authorized public artifact delivery; planned behavior is never labelled PASS.</p>
+      <p className="landing-note">Real Kit + Form composition runs in I01/I02. Form F02/F03 remain planned. Full K3/K4 scenario acceptance is separate.</p>
     </div>
   );
 }

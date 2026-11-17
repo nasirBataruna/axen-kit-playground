@@ -1,0 +1,45 @@
+/* Optional presentation layer: import '@axenstudio/axen-kit/react.css' in a browser consumer. */
+.axen-kit-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "nav" "main" "aside" "footer";
+  gap: var(--axen-spacing, 8px);
+  padding: var(--axen-spacing, 8px);
+  color: var(--axen-color-text, #0f172a);
+  background: var(--axen-color-background, #fff);
+  font-family: system-ui, sans-serif;
+  min-width: 0;
+}
+.axen-kit-slot { min-width: 0; }
+.axen-kit-slot--header { grid-area: header; }
+.axen-kit-slot--nav { grid-area: nav; }
+.axen-kit-slot--main { grid-area: main; }
+.axen-kit-slot--aside { grid-area: aside; }
+.axen-kit-slot--footer { grid-area: footer; }
+.axen-kit-panel {
+  min-width: 0;
+  padding: calc(var(--axen-spacing, 8px) * 2);
+  border: 1px solid var(--axen-color-border, #cbd5e1);
+  border-radius: var(--axen-radius, 12px);
+  background: var(--axen-color-surface, #f8fafc);
+}
+.axen-kit-panel__title { margin-block: 0 var(--axen-spacing, 8px); font-size: 1.125rem; }
+.axen-kit-status { padding: var(--axen-spacing, 8px); border-radius: var(--axen-radius, 12px); }
+.axen-kit-status--error { border: 1px solid var(--axen-color-border, #cbd5e1); }
+.axen-kit-action {
+  font: inherit;
+  color: #fff;
+  background: var(--axen-color-primary, #2563eb);
+  border: 0;
+  border-radius: var(--axen-radius, 12px);
+  padding: var(--axen-spacing, 8px) calc(var(--axen-spacing, 8px) * 2);
+  cursor: pointer;
+}
+.axen-kit-action:focus-visible { outline: 3px solid var(--axen-color-primary, #2563eb); outline-offset: 3px; }
+.axen-kit-action:disabled { cursor: not-allowed; opacity: .6; }
+@media (min-width: 900px) {
+  .axen-kit-shell[data-axen-kit-aside="true"] {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+    grid-template-areas: "header header" "nav nav" "main aside" "footer footer";
+  }
+}

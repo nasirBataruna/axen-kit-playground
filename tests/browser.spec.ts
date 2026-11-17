@@ -19,12 +19,12 @@ test('landing, navigation, source/config and pending provenance are honest', asy
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Explore the boundaries');
   await page.getByRole('navigation', { name: 'Scenarios' }).getByRole('link', { name: /K01.*Theme/i }).click();
   await expect(page).toHaveURL(/\/scenario\/K01$/);
-  await expect(page.getByText('Kit artifact pending', { exact: true })).toBeVisible();
-  await expect(page.getByText('Kit runtime is not shipped here yet')).toBeVisible();
+  await expect(page.getByText('Real Kit demo', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-axen-kit-shell]')).toBeVisible();
   await page.getByRole('button', { name: 'Source' }).click();
-  await expect(page.locator('.code-panel pre')).toContainText('ILLUSTRATIVE ONLY');
+  await expect(page.locator('.code-panel pre')).toContainText('Real Kit-only package');
   await page.getByRole('button', { name: 'Config' }).click();
-  await expect(page.locator('.code-panel pre')).toContainText('"status": "kit-pending"');
+  await expect(page.locator('.code-panel pre')).toContainText('"status": "live-kit"');
   await page.getByRole('link', { name: /F01.*Basic submission/i }).click();
   await expect(page).toHaveURL(/\/scenario\/F01$/);
   await expect(page.getByText('Real Form demo', { exact: true })).toBeVisible();
@@ -52,4 +52,29 @@ test('real public Axen Form F01 emits payload and reset clears state', async ({ 
   await expect(email).toHaveValue('');
   await expect(log).not.toContainText('Example Tester');
   await expect(log).toContainText('Reset requested');
+});
+
+test('real Kit AppShell wraps real AxenForm and submits values', async ({ page }) => {
+  await page.goto('/scenario/I01');
+  await expect(page.locator('[data-axen-kit-shell="kit-form-playground"]')).toBeVisible();
+  await expect(page.locator('[data-axen-kit-slot="main"]')).toBeVisible();
+  await page.locator('input[name="fullName"]').fill('Integrated Person');
+  await page.locator('input[name="email"]').fill('integrated@example.invalid');
+  await page.getByRole('button', { name: 'Submit Kit + Form' }).click();
+  await expect(page.locator('.event-log')).toContainText('Integrated Person');
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(page.locator('input[name="fullName"]')).toHaveValue('');
+});
+test('Kit theme toggle preserves live Form values until reset', async ({ page }) => {
+  await page.goto('/scenario/I02');
+  const shell = page.locator('[data-axen-kit-shell="kit-form-playground"]');
+  const name = page.locator('input[name="fullName"]');
+  await name.fill('Persistent Draft');
+  const before = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  await page.getByRole('button', { name: 'Switch Kit theme' }).click();
+  await expect(name).toHaveValue('Persistent Draft');
+  const after = await shell.evaluate(el => getComputedStyle(el).getPropertyValue('--axen-color-primary').trim());
+  expect(after).not.toBe(before);
+  await page.getByRole('button', { name: /reset/i }).click();
+  await expect(name).toHaveValue('');
 });

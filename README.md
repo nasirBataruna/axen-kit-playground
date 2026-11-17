@@ -61,3 +61,7 @@ Propose changes on feature branches and draft PRs. Keep the Kit, Form, Builder a
 ## GitHub About description (to set in repository Settings)
 
 **Axen Kit + Form interactive playground — React/Vite scenario shell, source/config inspector, and verifiable UI acceptance.**
+
+## Kit-only browser dependency (W28)
+
+This public playground consumes an exact six-file local package at `vendor/axen-kit` sourced from private `nasirBataruna/axen-lib` PR #5 SHA `2d9af79bac53c7e6dbd6628d712199ea209add8d`. Only Kit's package manifest, runtime JavaScript, declarations and CSS are exposed here; no full upstream monorepo or credentials. The live I01/I02 examples run the real KitAppShell and AxenForm@0.1.19. F02/F03 and formal K3/K4 acceptance remain pending. Do not treat pre-integration receipts as validation of the new SHA.
